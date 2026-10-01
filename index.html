@@ -191,7 +191,8 @@ input:focus, select:focus {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
+  text-align: center;
   gap: 28px;
   font-family: var(--sf);
   font-size: var(--fs, 18px);
@@ -202,6 +203,13 @@ input:focus, select:focus {
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
+}
+
+.single-heading-row .item.sent {
+  white-space: normal;
+  max-width: 100%;
+  justify-content: center;
+  text-align: center;
 }
 
 #tw svg { display: block; margin: 0 auto; }
@@ -277,6 +285,35 @@ button.add-sp {
 button.mv { padding: 2px 8px; font-size: 13px; }
 .tip { margin: 4px 0 8px; font-size: 13px; color: var(--mu); }
 
+/* ---- ان پٹ کنٹرولز: ہر اسکرین پر خودکار فٹ ---- */
+.hd2 { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 14px; }
+.hd2 label { gap: 2px; min-width: 0; line-height: 2.1; padding-bottom: 2px; }
+input, select { width: 100%; min-width: 0; height: 46px; padding: 0 12px; font-size: 16px; line-height: normal; }
+input[type=checkbox] { width: 20px; height: 20px; padding: 0; flex: 0 0 20px; accent-color: var(--ac); }
+button { min-height: 40px; }
+.r > button { flex: 0 0 auto; }
+.r input.n { flex: 1 1 150px; width: auto; }
+.r select { width: auto; flex: 0 1 150px; }
+.r > label { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; line-height: 2.1; }
+.r > label > span { display: inline-flex; align-items: center; gap: 8px; }
+.r > label > input:not([type=checkbox]) { width: 96px; flex: 0 0 96px; }
+.cd h3 { line-height: 2; }
+@media (max-width: 600px) {
+  .kids { margin-inline-start: 6px; padding-inline-start: 6px; }
+  .p { padding: 8px; }
+  .bar button { flex: 1 1 auto; justify-content: center; }
+  .r select { flex: 1 1 100%; }
+  .r input.n { flex: 1 1 100%; }
+  .r > button { flex: 1 1 auto; justify-content: center; }
+}
+
+@media (max-width: 600px) {
+  .app { padding: 8px; gap: 10px; }
+  .pv { padding: 6px; }
+  .cd { padding: 10px; }
+  .hd2 { grid-template-columns: 1fr; }
+}
+
 @page { size: 8.5in 14in; margin: .25in; }
 @media print {
   body { background: #fff; }
@@ -289,6 +326,7 @@ button.mv { padding: 2px 8px; font-size: 13px; }
     padding: 0.1in;
     width: 8in;
     height: 13.5in;
+    zoom: 1 !important;
   }
 }
 </style>
@@ -680,16 +718,21 @@ function render() {
     lay(par, 0);
   }
 
-  const Wt = Math.max(R._W, par ? par._W : 0);
+  // اصل بائیں/دائیں حد نکال کر چوڑائی طے کرنا (ورنہ اکیلی زوجہ کا پتہ اور نام کٹ جاتا تھا)
+  const rcx0 = R._W - R._anchor;
+  const parL = par ? rcx0 - (par._W - par._anchor) : 0;
+  const minX = Math.min(0, parL);
+  const maxX = Math.max(R._W, par ? parL + par._W : 0);
+  const Wt = maxX - minX;
   const ry = 34 + (hasPar ? 95 : 0);
   const Ht = ry + dep(R) * PT + 85;
 
   // متوفی کو شجرہ میں سینٹر ڈرا کرنا
-  const rootCx = draw(R, (Wt - R._W) / 2, 0, ry);
+  const rootCx = draw(R, -minX, 0, ry);
 
   // والدین کو عین متوفی کے اوپر بالکل سیدھ میں ڈرا کرنا
   if (par) {
-    const parX0 = rootCx - (par._W - par._anchor);
+    const parX0 = parL - minX;
     draw(par, parX0, 0, 34);
     ln(rootCx, 34 + 18, rootCx, tp(R._k, ry));
   }
@@ -705,7 +748,7 @@ function render() {
   }
 
   const mutawaffaLabel = R.g === 'f' ? 'متوفیہ' : 'متوفی';
-  const gt = `شجرہ نسب حسب گفتہ ${H.gn || '________'} ${H.rel || 'بیٹا'} ${mutawaffaLabel} ${R.n || '________'} ${relationString} مرتب کیا گیا`.replace(/\s+/g, ' ');
+  const gt = `شجرہ نسب حسب گفتہ ${H.gn || '________'} ${H.rel || 'بیٹا'} ${mutawaffaLabel} ${R.n || '________'} ${relationString} درج ذیل مرتب کیا گیا`.replace(/\s+/g, ' ');
 
   const sheet = $('#sheet');
   sheet.style.setProperty('--sf', fam());
@@ -717,7 +760,7 @@ function render() {
     <div class="single-heading-row">
       <div class="item">وراثت نمبر:&nbsp;<b>${esc(H.vn) || '______'}</b></div>
       <div class="item">موضع / چک نمبر:&nbsp;<b>${esc(H.mz) || '______'}</b></div>
-      <div class="item">${esc(gt)}</div>
+      <div class="item sent">${esc(gt)}</div>
     </div>
   ` : '';
 
@@ -742,10 +785,21 @@ function render() {
 
   sheet.innerHTML = headerHtml + `<div style="height:${(+H.bl || 0) * 20}px"></div><div id="tw"></div>` + witnessHtml;
 
+  sheet.style.zoom = '';
   const used = [...sheet.children].filter(c => c.id !== 'tw').reduce((a, c) => a + c.offsetHeight, 0);
   const s = Math.min(1, 768 / (Wt + 20), (1296 - used - 8) / Ht);
   $('#tw').innerHTML = `<svg width="${(Wt + 20) * s}" height="${Ht * s}" viewBox="-10 0 ${Wt + 20} ${Ht}">${o.join('')}</svg>`;
+  fit();
 }
+
+function fit() {
+  const pv = $('.pv'), sh = $('#sheet');
+  sh.style.zoom = '';
+  const pad = parseFloat(getComputedStyle(pv).paddingLeft) * 2;
+  const z = Math.min(1, (pv.clientWidth - pad) / sh.offsetWidth);
+  if (z < 1) sh.style.zoom = z;
+}
+window.addEventListener('resize', fit);
 
 $('#pr').onclick = () => print();
 $('#nw').onclick = () => { S = BLANK(); build(); };
